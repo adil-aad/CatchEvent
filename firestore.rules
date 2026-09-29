@@ -1,0 +1,160 @@
+rules_version = '2';
+
+// Firestore security rules for CatchEvent.
+//
+// Paste these into Firebase Console → Firestore Database → Rules → Publish,
+// or run `firebase deploy --only firestore:rules`. See FIREBASE_SETUP.md.
+//
+// These enforce, on the server, the same rules the app enforces in the UI —
+// so they hold even if someone talks to Firestore directly:
+//
+//   * you must be signed in to read anything;
+//   * only an organizer can create an event, and only for themselves;
+//   * an organizer can edit or delete only their own events;
+//   * a student may change only `registeredCount`, by one, within capacity;
+//   * a student can create and cancel only their own registration;
+//   * bookmarks are private to the student who made them.
+//
+// A note on `resource == null`: the app's register/unregister transaction reads
+// the registration document to find out whether it exists. Firestore evaluates
+// the rule for a missing document with `resource` set to null, so the null case
+// has to be allowed explicitly or that existence check fails. It reveals only
+// whether a document is there, never its contents.
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ------------------------------------------------------------ helpers
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isSelf(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    // Role lives on the user's profile document, not in the auth token.
+    function isOrganizer() {
+      return isSignedIn()
+        && get(/databases/$(database)/documents/users/$(request.auth.uid))
+             .data.role == 'organizer';
+    }
+
+    // True when the signed-in user created the given event.
+    function ownsEvent(eventId) {
+      return isSignedIn()
+        && exists(/databases/$(database)/documents/events/$(eventId))
+        && get(/databases/$(database)/documents/events/$(eventId))
+             .data.organizerId == request.auth.uid;
+    }
+
+    // ------------------------------------------------------------- users
+
+    match /users/{userId} {
+      // A profile is only ever read back by its own owner (names shown to an
+      // organizer are copied onto the registration document instead).
+      allow get: if isSelf(userId);
+
+      allow create: if isSelf(userId)
+        && request.resource.data.role in ['student', 'organizer'];
+
+      // The role gates event creation, so it must not be self-editable.
+      allow update: if isSelf(userId)
+        && request.resource.data.role == resource.data.role;
+
+      allow delete: if false;
+    }
+
+    // ------------------------------------------------------------ events
+
+    match /events/{eventId} {
+      // Every signed-in user browses the same event list.
+      allow read: if isSignedIn();
+
+      allow create: if isOrganizer()
+        && request.resource.data.organizerId == request.auth.uid
+        && request.resource.data.registeredCount == 0
+        && request.resource.data.capacity is int
+        && request.resource.data.capacity > 0;
+
+      // Two very different writers touch an event, so there are two cases.
+
+      // 1. The organizer editing their own event. Ownership cannot be handed
+      //    over, and the live count cannot be rewritten by hand.
+      allow update: if isSignedIn()
+        && resource.data.organizerId == request.auth.uid
+        && request.resource.data.organizerId == resource.data.organizerId
+        && request.resource.data.registeredCount == resource.data.registeredCount
+        && request.resource.data.capacity is int
+        && request.resource.data.capacity > 0;
+
+      // 2. A student registering or cancelling. Only `registeredCount` may
+      //    move, by at most one, and never past capacity or below zero — so a
+      //    student cannot free up a seat in a full event or fake attendance.
+      allow update: if isSignedIn()
+        && request.resource.data.diff(resource.data).affectedKeys()
+             .hasOnly(['registeredCount'])
+        && request.resource.data.registeredCount >= 0
+        && request.resource.data.registeredCount <= resource.data.capacity
+        && request.resource.data.registeredCount
+             >= resource.data.registeredCount - 1
+        && request.resource.data.registeredCount
+             <= resource.data.registeredCount + 1;
+
+      allow delete: if isSignedIn()
+        && resource.data.organizerId == request.auth.uid;
+    }
+
+    // ----------------------------------------------------- registrations
+
+    // Document id is `eventId_studentId`, which is what makes "one
+    // registration per student per event" enforceable.
+    match /registrations/{registrationId} {
+      // The student sees their own rows; the organizer sees everyone who
+      // registered for their event.
+      allow read: if isSignedIn()
+        && (resource == null
+            || resource.data.studentId == request.auth.uid
+            || ownsEvent(resource.data.eventId));
+
+      allow create: if isSignedIn()
+        && request.resource.data.studentId == request.auth.uid
+        && registrationId ==
+             request.resource.data.eventId + '_' + request.auth.uid;
+
+      // Nothing edits a registration — it is created or removed.
+      allow update: if false;
+
+      // The student cancels; the organizer's delete cascade cleans up.
+      allow delete: if isSignedIn()
+        && (resource == null
+            || resource.data.studentId == request.auth.uid
+            || ownsEvent(resource.data.eventId));
+    }
+
+    // ------------------------------------------------------ saved events
+
+    // Document id is `userId_eventId`: bookmarking twice is the same write.
+    match /savedEvents/{savedId} {
+      // Bookmarks are private. The organizer may list them only so deleting
+      // an event can clear the bookmarks pointing at it.
+      allow read: if isSignedIn()
+        && (resource == null
+            || resource.data.userId == request.auth.uid
+            || ownsEvent(resource.data.eventId));
+
+      allow create: if isSignedIn()
+        && request.resource.data.userId == request.auth.uid
+        && savedId ==
+             request.auth.uid + '_' + request.resource.data.eventId;
+
+      allow update: if false;
+
+      allow delete: if isSignedIn()
+        && (resource == null
+            || resource.data.userId == request.auth.uid
+            || ownsEvent(resource.data.eventId));
+    }
+  }
+}
