@@ -71,7 +71,7 @@ class EventListView extends StatelessWidget {
       return ListView(
         padding: const EdgeInsets.symmetric(horizontal: 16),
         children: [
-          if (header != null) header!,
+          ?header,
           const SizedBox(height: 48),
           EventEmptyState(
             icon: emptyIcon,

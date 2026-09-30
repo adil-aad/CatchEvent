@@ -27,7 +27,7 @@ class EventImage extends StatelessWidget {
           : Image.network(
               imageUrl,
               fit: BoxFit.cover,
-              errorBuilder: (context, _, __) => _placeholder(context),
+              errorBuilder: (context, _, _) => _placeholder(context),
               loadingBuilder: (context, child, progress) {
                 if (progress == null) return child;
                 return _placeholder(context, showSpinner: true);
