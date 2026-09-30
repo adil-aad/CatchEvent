@@ -36,10 +36,10 @@ class DefaultFirebaseOptions {
   }
 
   static const FirebaseOptions android = FirebaseOptions(
-    apiKey: 'REPLACE_ME_RUN_FLUTTERFIRE_CONFIGURE',
-    appId: '1:000000000000:android:0000000000000000000000',
-    messagingSenderId: '000000000000',
-    projectId: 'catchevent-placeholder',
-    storageBucket: 'catchevent-placeholder.appspot.com',
+    apiKey: 'AIzaSyDyMD7bAOeNpXWUlu3nn8v6S3xLkx6V1F8',
+    appId: '1:697438257500:android:c07194fb140ac011f24199',
+    messagingSenderId: '697438257500',
+    projectId: 'catchevent-417f4',
+    storageBucket: 'catchevent-417f4.firebasestorage.app',
   );
 }

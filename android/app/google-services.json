@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "697438257500",
+    "project_id": "catchevent-417f4",
+    "storage_bucket": "catchevent-417f4.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:697438257500:android:c07194fb140ac011f24199",
+        "android_client_info": {
+          "package_name": "com.example.catchevent"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDyMD7bAOeNpXWUlu3nn8v6S3xLkx6V1F8"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
