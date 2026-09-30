@@ -161,6 +161,24 @@ Three bugs were found and fixed while reviewing the finished code:
 3. `organizer_home_screen.dart` called a `.sized()` helper that does not
    exist; replaced with a plain `SizedBox`.
 
+### Analyzer pass
+
+`flutter analyze` reported three issues; all are fixed.
+
+1. **`test/widget_test.dart` did not compile** — the generated test built
+   `MyApp` and tapped a counter, neither of which exists here. Replaced with
+   real tests of the Firebase-free parts: the validators, the event model's
+   seat arithmetic and date formatting, and the empty-state widget. Two cases
+   pin down bugs from the review above — that a bare-host image URL is
+   accepted, and that `toMap()` omits `registeredCount`.
+2. `event_image.dart` — `errorBuilder` ignores two of its three arguments;
+   Dart 3.7 allows `_` for each, so the second no longer needs to be `__`.
+3. `event_list_view.dart` — `if (header != null) header!` became `?header`,
+   which drops the null assertion instead of hiding it.
+
+The screens are deliberately untested: they read from Firestore through the
+providers, which would need a live backend or a fake.
+
 ### Documentation and security rules
 
 - `FIREBASE_SETUP.md` — the console and CLI steps, a first-run walkthrough, and
