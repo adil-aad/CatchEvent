@@ -194,8 +194,17 @@ Chat, payments, QR attendance, push notifications, AI recommendations,
 analytics, a social feed, ticketing, maps, an admin dashboard, comments and
 ratings.
 
-### Known environment requirement
+### Known environment requirements
 
-Windows needs **Developer Mode** enabled for Flutter plugin builds
-(`start ms-settings:developers`). Without it the Android build fails with
-*"Building with plugins requires symlink support."*
+Two one-time Windows/SDK prerequisites, neither specific to this project.
+Both are Step 0 of `FIREBASE_SETUP.md`.
+
+- **Developer Mode** must be on for Flutter plugin builds
+  (`start ms-settings:developers`). Without it: *"Building with plugins
+  requires symlink support."*
+- **CMake 3.22.1** must be installed in the Android SDK. Without it:
+  *`[CXX1300] CMake '3.22.1' was not found in SDK, PATH, or by cmake.dir
+  property`*. CatchEvent has no native code — Flutter's Gradle plugin points
+  every Android app at an empty `CMakeLists.txt` to force the NDK download
+  (`forceNdkDownload` in `FlutterPluginUtils.kt`), and Gradle still needs CMake
+  to configure that stub.

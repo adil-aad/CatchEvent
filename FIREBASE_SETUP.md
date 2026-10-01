@@ -10,16 +10,40 @@ Work through the five steps below in order. It takes about 10 minutes.
 
 ---
 
-## Step 0 — Enable Windows Developer Mode (one time)
+## Step 0 — One-time machine setup
 
-Flutter plugins on Windows need symlink support. Until this is on, the Android
-build fails with *"Building with plugins requires symlink support."*
+Two things Flutter needs on Windows before any Android build will finish.
+Neither is specific to CatchEvent.
+
+**Developer Mode.** Flutter plugins on Windows need symlink support. Until
+this is on, the build fails with *"Building with plugins requires symlink
+support."*
 
 ```
 start ms-settings:developers
 ```
 
 Turn **Developer Mode** on, then reopen your terminal.
+
+**CMake 3.22.1**, in the Android SDK. Without it the build fails with
+*`[CXX1300] CMake '3.22.1' was not found in SDK, PATH, or by cmake.dir
+property`*.
+
+In Android Studio: **Settings → Languages & Frameworks → Android SDK → SDK
+Tools** tab → tick **Show Package Details** → expand **CMake** → tick
+**3.22.1** → **Apply**. Tick **Android SDK Command-line Tools (latest)** at
+the same time if it is not installed; `flutter doctor` wants it.
+
+This one surprises people, because CatchEvent contains no native code. Flutter
+points *every* Android app at an empty `CMakeLists.txt` purely to make Gradle
+download the NDK — see `forceNdkDownload` in the Flutter SDK's
+`FlutterPluginUtils.kt`, whose own comment says it is "only tricking AGP into
+downloading the NDK". The stub compiles nothing, but CMake still has to be
+installed for Gradle to configure it.
+
+The exact version matters: AGP asks for its own default, so a newer CMake is
+ignored unless you pin it with `externalNativeBuild { cmake { version = "…" } }`
+in `android/app/build.gradle.kts`.
 
 ---
 
@@ -163,6 +187,7 @@ With an Android emulator running (or a phone connected with USB debugging on),
 | --- | --- |
 | "Firebase is not configured yet" screen | Step 4 has not been run, or it wrote to a different folder. |
 | "Building with plugins requires symlink support" | Step 0. |
+| `[CXX1300] CMake '3.22.1' was not found in SDK` | Step 0. CatchEvent has no native code — Flutter adds an empty CMake build to force the NDK download, and that still needs CMake installed. |
 | "Could not load events. Check your connection." | Rules not published (Step 5), or the emulator has no network. |
 | `[firebase_auth/configuration-not-found]` | Email/Password was not enabled (Step 2). |
 | `PERMISSION_DENIED` in the console logs | Rules not published (Step 5). |
