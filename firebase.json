@@ -1,0 +1,24 @@
+{
+  "firestore": {
+    "rules": "firestore.rules"
+  },
+  "flutter": {
+    "platforms": {
+      "android": {
+        "default": {
+          "projectId": "catchevent-417f4",
+          "appId": "1:697438257500:android:c07194fb140ac011f24199",
+          "fileOutput": "android/app/google-services.json"
+        }
+      },
+      "dart": {
+        "lib/firebase_options.dart": {
+          "projectId": "catchevent-417f4",
+          "configurations": {
+            "android": "1:697438257500:android:c07194fb140ac011f24199"
+          }
+        }
+      }
+    }
+  }
+}
